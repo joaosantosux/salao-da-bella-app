@@ -1,0 +1,104 @@
+/* Estilo do container da página de agendamento */
+.booking-container {
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #2f2f2f;
+  color: var(--color-text-light);
+  border: 1px solid #444;
+  border-radius: 8px;
+}
+
+.service-details {
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #444;
+}
+
+.service-details h3 {
+  font-size: 2em;
+  margin-top: 0;
+}
+
+.service-details p {
+  font-size: 1.5em;
+  color: #ccc;
+}
+
+/* Estilo para o calendário */
+.react-calendar {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  background-color: #242424;
+}
+
+.react-calendar__tile {
+  color: white;
+}
+
+.react-calendar__tile:hover {
+  background-color: #444;
+}
+
+.react-calendar__tile--active {
+  background-color: #646cff !important;
+  color: white !important;
+}
+
+.react-calendar__tile--now {
+  background-color: #3a3a3a;
+}
+
+.react-calendar__month-view__days__day--weekend {
+  color: #ff6a6a;
+}
+
+.time-slots-container {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #444;
+}
+
+.time-slot-button {
+  background-color: #3a3a3a;
+  border: 1px solid #555;
+  color: white;
+  padding: 10px 20px;
+  margin: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.time-slot-button:hover {
+  background-color: #444;
+}
+
+.time-slot-button.selected {
+  background-color: #646cff;
+  border-color: #646cff;
+  color: white;
+}
+
+.confirmation-area {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #444;
+}
+
+.confirm-button {
+  background-color: #2fb46b;
+  color: white;
+  width: 100%;
+  border: none;
+  padding: 15px;
+  font-size: 1.2em;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.confirm-button:hover {
+  background-color: #289c5b;
+}

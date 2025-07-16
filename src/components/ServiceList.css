@@ -1,0 +1,73 @@
+.service-list-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    /* Espaço entre os cartões */
+    margin-top: 30px;
+}
+
+.service-card {
+    background-color: #2f2f2f;
+    color: var(--color-text-light);
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 20px;
+    width: 250px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.service-card h3 {
+    margin-top: 0;
+}
+
+.service-card button {
+    background-color: #646cff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100%;
+}
+
+.service-card button:hover {
+    background-color: #535bf2;
+}
+
+.agendar-button {
+    display: block;
+    /* Faz o link ocupar a largura toda */
+    background-color: #2FB46B;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+    /* Remove o sublinhado do link */
+}
+
+.agendar-button:hover {
+    background-color: #535bf2;
+}
+
+/* ================== MEDIA QUERIES PARA RESPONSIVIDADE ================== */
+
+/* Estilos que só se aplicam em telas com 768px de largura ou menos */
+@media (max-width: 768px) {
+    .service-list-container {
+        /* Muda a direção dos itens de linha para coluna */
+        flex-direction: column;
+        /* Alinha os cards no centro da coluna */
+        align-items: center;
+    }
+
+    .service-card {
+        /* Faz o card ocupar 90% da largura da tela do celular, em vez de um tamanho fixo */
+        width: 90%;
+    }
+}

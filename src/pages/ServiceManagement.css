@@ -1,0 +1,144 @@
+.service-management-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+.add-service-form {
+    background-color: #2f2f2f;
+    color: var(--color-text-light);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.add-service-form input {
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #555;
+    background-color: #242424;
+    color: white;
+}
+
+.add-service-form button {
+    padding: 12px;
+    font-weight: bold;
+    background-color: #646cff;
+    color: var(--color-text-light);
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+}
+
+/* INÍCIO DA CORREÇÃO */
+.service-list-admin .service-item-admin {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* Alinha verticalmente os itens no centro */
+    padding: 15px;
+    background-color: #2f2f2f;
+    color: var(--color-text-light);
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.service-info {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    /* Alinha o texto à esquerda */
+}
+
+.service-info span:first-child {
+    font-weight: bold;
+    /* Deixa o nome do serviço em negrito */
+}
+
+.service-actions {
+    display: flex;
+    gap: 10px;
+    /* Adiciona espaço entre os botões de editar e excluir */
+}
+
+/* FIM DA CORREÇÃO */
+
+.edit-mode {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.edit-mode input {
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #646cff;
+    background-color: #242424;
+    color: white;
+}
+
+.edit-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.edit-actions button {
+    flex-grow: 1;
+    padding: 10px;
+    font-weight: bold;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+}
+
+.save-button {
+    background-color: #2fb46b;
+    color: white;
+}
+
+.cancel-edit-button {
+    background-color: #555;
+    color: white;
+}
+
+.edit-button {
+    background-color: transparent;
+    border: 1px solid #646cff;
+    color: #646cff;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.edit-button:hover {
+    background-color: #646cff;
+    color: white;
+}
+
+.delete-button {
+    background-color: #ff6a6a;
+    border: none;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.delete-button:hover {
+    background-color: #e05252;
+}
+
+/* Media Query para ajustar o layout da lista de serviços no mobile */
+@media (max-width: 768px) {
+    .service-management-container {
+        width: 100%;
+        padding: 10px;
+        margin: 0;
+        box-sizing: border-box;
+    }
+}

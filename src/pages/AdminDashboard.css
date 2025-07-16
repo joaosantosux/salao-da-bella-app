@@ -1,0 +1,217 @@
+/* Cole este código completo no AdminDashboard.css */
+.admin-dashboard-container {
+  max-width: 1000px;
+  margin: 20px auto;
+  padding: 20px;
+}
+
+.admin-nav {
+  display: flex;
+  gap: 10px;
+  background-color: #2f2f2f;
+  padding: 5px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.admin-nav a {
+  flex: 1;
+  text-align: center;
+  color: white;
+  text-decoration: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  white-space: nowrap;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.admin-nav a:hover {
+  background-color: #444;
+}
+
+.admin-nav a.active {
+  background-color: #646cff;
+  font-weight: bold;
+}
+
+.view-mode-selector {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+  background-color: #2f2f2f;
+  padding: 5px;
+  border-radius: 8px;
+}
+
+.view-mode-selector button {
+  flex: 1;
+  padding: 10px 15px;
+  border: none;
+  background-color: transparent;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.view-mode-selector button:hover {
+  background-color: #444;
+}
+
+.view-mode-selector button.active {
+  background-color: #646cff;
+}
+
+.admin-content {
+  display: flex;
+  gap: 30px;
+  margin-top: 20px;
+}
+
+.calendar-container {
+  flex: 1;
+  min-width: 280px;
+}
+
+.bookings-list-container {
+  flex: 1;
+  background-color: #2f2f2f;
+  color: var(--color-text-light);
+  padding: 20px;
+  border-radius: 8px;
+}
+
+/* MUDANÇA: Ajustado para alinhar o botão de cancelar */
+.admin-booking-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #444;
+}
+
+.admin-booking-card:last-child {
+  border-bottom: none;
+}
+
+.booking-details-admin span,
+.booking-details span {
+  opacity: 0.7;
+  font-size: 0.9em;
+}
+
+.all-bookings-container {
+  background-color: #2f2f2f;
+  color: var(--color-text-light);
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.admin-booking-card-full {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  border-bottom: 1px solid #444;
+}
+
+.admin-booking-card-full:last-child {
+  border-bottom: none;
+}
+
+.booking-date-highlight {
+  background-color: #646cff;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.booking-details {
+  flex-grow: 1;
+}
+
+/* Faz os detalhes ocuparem o espaço disponível */
+
+/* NOVO: Estilo para o botão de cancelar do admin */
+.admin-cancel-button {
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.admin-cancel-button:hover {
+  background-color: #e03c3e;
+}
+
+.react-calendar {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  background-color: #2f2f2f;
+  padding: 15px;
+  box-sizing: border-box;
+}
+
+.react-calendar__navigation__label {
+  color: white !important;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.react-calendar__navigation button:hover,
+.react-calendar__navigation button:focus {
+  background-color: #444 !important;
+}
+
+.react-calendar__month-view__weekdays__weekday abbr {
+  text-decoration: none;
+  font-weight: bold;
+  color: #888;
+}
+
+.react-calendar__tile {
+  color: white;
+  background: none;
+  border: none;
+  border-radius: 5px;
+}
+
+.react-calendar__tile:hover {
+  background-color: #444;
+}
+
+.react-calendar__tile--active {
+  background-color: #646cff !important;
+  color: white !important;
+}
+
+.react-calendar__tile--now {
+  background-color: #3a3a3a;
+}
+
+.react-calendar__month-view__days__day--weekend {
+  color: #ff6a6a;
+}
+
+.react-calendar__tile--neighboringMonth {
+  color: #555;
+}
+
+@media (max-width: 768px) {
+  .admin-content {
+    flex-direction: column;
+  }
+
+  .admin-dashboard-container {
+    width: 100%;
+    margin: 0;
+    padding: 10px;
+    box-sizing: border-box;
+  }
+}

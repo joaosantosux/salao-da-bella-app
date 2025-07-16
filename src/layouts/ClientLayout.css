@@ -1,0 +1,36 @@
+.client-nav {
+    display: flex;
+    gap: 10px;
+    background-color: var(--color-background-card, rgba(255, 255, 255, 0.7));
+    padding: 5px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.client-nav a {
+    flex: 1;
+    text-align: center;
+    font-family: var(--font-body);
+    color: var(--color-text);
+    text-decoration: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: all 0.2s ease-in-out;
+}
+
+.client-nav a:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Estilo para o link que está ativo */
+.client-nav a.active {
+    background-color: var(--color-primary, #d4a3a3);
+    color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.client-content-area {
+    margin-top: 20px;
+}

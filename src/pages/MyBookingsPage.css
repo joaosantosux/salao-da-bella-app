@@ -1,0 +1,57 @@
+.my-bookings-container {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+}
+
+.booking-card {
+  background-color: var(--color-background-card, #2f2f2f);
+  color: var(--color-text-light, #f0f0f0);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  /* Alinha o texto à esquerda */
+}
+
+.booking-card h3 {
+  margin-top: 0;
+  font-family: var(--font-heading);
+  color: var(--color-primary);
+  /* Usa a cor primária para destaque */
+}
+
+.booking-card p {
+  margin: 8px 0;
+  font-family: var(--font-body);
+}
+
+/* ========================================================== */
+/* AQUI ESTÁ A MUDANÇA QUE VOCÊ PEDIU                         */
+/* ========================================================== */
+
+.cancel-booking-button {
+  background-color: #D32F2F;
+  color: white;
+  border: none;
+
+  /* AQUI ESTÁ O AJUSTE DE TAMANHO */
+  padding: 5px 12px;
+  /* Você pode aumentar ou diminuir o 10px para ajustar a altura */
+  font-size: 0.8em;
+  /* Um tamanho de fonte um pouco menor */
+
+  margin-top: 12px;
+  border-radius: 10px;
+  /* Bordas mais arredondadas para um visual suave */
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s ease-in-out;
+}
+
+.cancel-booking-button:hover {
+  background-color: #C62828;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}

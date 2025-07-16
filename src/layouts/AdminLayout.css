@@ -1,0 +1,39 @@
+.admin-layout-container {
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+.admin-nav {
+    display: flex;
+    flex-wrap: wrap; /* Permite quebrar linha no mobile */
+    gap: 10px;
+    background-color: #2f2f2f;
+    padding: 5px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.admin-nav a {
+    flex: 1;
+    text-align: center;
+    color: white;
+    text-decoration: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    white-space: nowrap;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.admin-nav a:hover {
+    background-color: #444;
+}
+
+.admin-nav a.active {
+    background-color: #646cff;
+    font-weight: bold;
+}
+
+.admin-content-area {
+    margin-top: 20px;
+}

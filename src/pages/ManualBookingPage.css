@@ -1,0 +1,103 @@
+/* Cole este código no novo arquivo src/pages/ManualBookingPage.css */
+.manual-booking-container {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+.booking-steps .step {
+    background-color: #2f2f2f;
+    color: var(--color-text-light);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.service-selection-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.service-button {
+    background-color: #3a3a3a;
+    border: 1px solid #555;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.service-button.selected,
+.service-button:hover {
+    background-color: #646cff;
+    border-color: #646cff;
+}
+
+.client-name-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #555;
+    background-color: #242424;
+    color: white;
+}
+
+.calendar-time-wrapper {
+    display: flex;
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.time-slots-wrapper {
+    max-height: 300px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.save-booking-button {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.2em;
+    font-weight: bold;
+    background-color: #2fb46b;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.confirmation-summary p {
+    margin: 5px 0;
+}
+
+/* ========================================================== */
+/* REGRAS PARA RESPONSIVIDADE MOBILE            */
+/* ========================================================== */
+
+@media (max-width: 768px) {
+    .calendar-time-wrapper {
+        /* Muda a direção para vertical em telas pequenas */
+        flex-direction: column;
+        align-items: center;
+        /* Centraliza o calendário e a lista na coluna */
+    }
+
+    .time-slots-wrapper {
+        width: 100%;
+        /* Garante que a lista de horários ocupe a largura total */
+        max-height: 250px;
+        /* Evita que a lista fique muito longa e cria uma rolagem se necessário */
+        flex-direction: row;
+        /* Faz os botões de horário ficarem em linha novamente */
+        flex-wrap: wrap;
+        /* Permite que os botões quebrem a linha se não couberem */
+        justify-content: center;
+        /* Centraliza os botões */
+        margin-top: 20px;
+        /* Adiciona um espaço acima da lista de horários */
+    }
+}
