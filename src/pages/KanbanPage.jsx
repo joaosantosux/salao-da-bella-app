@@ -1,148 +1,167 @@
-import React, { useState, useEffect } from 'react';
-// A importação do 'db' também precisa do caminho correto
+import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '../firebaseConfig.js';
-import { collection, getDocs, doc, updateDoc, query, where } from 'firebase/firestore';
-import { DndContext, closestCenter, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-
-// --- INÍCIO DA CORREÇÃO ---
-// 1. Importando KanbanColumn como 'default' (sem chaves) e com o caminho correto.
+import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext } from '@dnd-kit/sortable';
 import { KanbanColumn } from '../components/KanbanColumn.jsx';
-// 2. Importando KanbanCard como 'named' (com chaves) e com o caminho correto.
 import { KanbanCard } from '../components/KanbanCard.jsx';
-// --- FIM DA CORREÇÃO ---
-
+import styled from 'styled-components';
 import toast from 'react-hot-toast';
-// O CSS também pode precisar de ajuste de caminho se você o moveu
-import './KanbanPage.css';
 
-const KANBAN_COLUMNS = {
-    cadastrado: { id: 'cadastrado', title: 'Cadastrado' },
-    agendado: { id: 'agendado', title: 'Agendado' },
-    realizado: { id: 'realizado', title: 'Procedimento Realizado' },
-    // Adicionei as colunas que faltavam da sua implementação anterior para consistência
-    contatado: { id: 'contatado', title: 'Contatado' },
-    desistente: { id: 'desistente', title: 'Desistente' },
-};
+const KanbanContainer = styled.div`
+  padding: 24px;
+  background-color: #f0eade;
+`;
+const BoardContainer = styled.div`
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+  align-items: flex-start;
+`;
+const KANBAN_COLUMNS = [
+    { id: 'cadastrado', title: 'Novos Cadastros' },
+    { id: 'contatado', title: 'Contatado' },
+    { id: 'agendado', title: 'Agendado' },
+    { id: 'realizado', title: 'Realizado' },
+    { id: 'desistente', title: 'Desistente' },
+];
 
 export function KanbanPage() {
-    // Sua lógica de state, que está correta, é mantida
     const [users, setUsers] = useState([]);
-    const [columns, setColumns] = useState(null);
-    const [activeUser, setActiveUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    const sensors = useSensors(useSensor(PointerSensor));
-
-    // Sua função de busca, mantida intacta
-    const fetchUsers = async () => {
-        setLoading(true);
-        try {
-            const usersQuery = query(collection(db, "users"), where("role", "==", "customer"));
-            const querySnapshot = await getDocs(usersQuery);
-            const allUsers = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-                createdAt: doc.data().createdAt?.toDate()
-            }));
-            console.log("CLIENTES BUSCADOS:", allUsers);
-            setUsers(allUsers);
-        } catch (error) {
-            console.error("Erro ao buscar clientes para o Kanban:", error);
-            toast.error("Não foi possível carregar os clientes. Verifique as regras do Firestore.");
-        } finally {
-            setLoading(false);
-        }
-    };
+    const [appointments, setAppointments] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [activeCard, setActiveCard] = useState(null);
 
     useEffect(() => {
-        fetchUsers();
+        const fetchData = async () => {
+            setIsLoading(true);
+            try {
+                const usersQuery = query(collection(db, "users"), where("role", "==", "customer"));
+                const appointmentsQuery = query(collection(db, "agendamentos"));
+                const [usersSnapshot, appointmentsSnapshot] = await Promise.all([getDocs(usersQuery), getDocs(appointmentsQuery)]);
+                const usersData = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const appointmentsData = appointmentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setUsers(usersData);
+                setAppointments(appointmentsData);
+            } catch (error) {
+                console.error("Erro ao buscar dados:", error);
+                toast.error("Não foi possível carregar os dados do quadro.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchData();
     }, []);
 
-    // Seu useEffect para processar os dados, mantido intacto
-    useEffect(() => {
-        if (!users) return;
-        const newColumns = {};
-        Object.values(KANBAN_COLUMNS).forEach(column => {
-            newColumns[column.id] = { ...column, items: [] };
-        });
-
-        users.forEach(user => {
-            const statusKey = (user.status || 'cadastrado').toLowerCase();
-            if (newColumns[statusKey]) {
-                newColumns[statusKey].items.push(user);
-            } else if (newColumns.cadastrado) {
-                // Fallback mais seguro
-                newColumns.cadastrado.items.push(user);
+    const enrichedUsers = useMemo(() => {
+        return users.map(user => {
+            const userAppointment = appointments
+                .filter(app => app.userId === user.id)
+                .sort((a, b) => {
+                    const dateA = a.date ? new Date(a.date.split('/').reverse().join('-')) : 0;
+                    const dateB = b.date ? new Date(b.date.split('/').reverse().join('-')) : 0;
+                    return dateB - dateA;
+                })[0];
+            if (userAppointment) {
+                return {
+                    ...user,
+                    appointmentInfo: {
+                        serviceName: userAppointment.serviceName,
+                        date: userAppointment.date,
+                        time: userAppointment.time,
+                    }
+                };
             }
+            return user;
         });
-        setColumns(newColumns);
-    }, [users]);
+    }, [users, appointments]);
 
-    // Suas funções de drag-and-drop, mantidas intactas
-    const handleDragStart = (event) => {
-        setActiveUser(users.find(u => u.id === event.active.id) || null);
-    };
+    const columns = useMemo(() => {
+        return KANBAN_COLUMNS.reduce((acc, column) => {
+            acc[column.id] = enrichedUsers.filter(user => user.status === column.id);
+            return acc;
+        }, {});
+    }, [enrichedUsers]);
 
-    const handleDragEnd = async (event) => {
-        setActiveUser(null);
+    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+
+    function handleDragStart(event) {
+        const card = enrichedUsers.find(user => user.id === event.active.id);
+        setActiveCard(card);
+    }
+
+    // --- AQUI ESTÁ A CORREÇÃO ---
+    // Adicionamos a palavra 'async' antes da definição da função
+    async function handleDragEnd(event) {
+        setActiveCard(null);
         const { active, over } = event;
-
         if (!over) return;
 
-        const activeContainer = active.data.current?.sortable?.containerId;
-        const overContainer = over.data.current?.sortable?.containerId || over.id;
+        const activeContainer = active.data.current?.sortable.containerId;
+        const overContainer = over.data.current?.sortable.containerId || over.id;
 
-        if (!activeContainer || !overContainer || activeContainer === overContainer) {
-            return;
-        }
+        if (activeContainer && overContainer && activeContainer !== overContainer) {
+            // --- Nossas Regras de Negócio ---
+            const workflow = ['cadastrado', 'contatado', 'agendado', 'realizado'];
+            const fromIndex = workflow.indexOf(activeContainer);
+            const toIndex = workflow.indexOf(overContainer);
 
-        setUsers((prevUsers) => {
-            const activeIndex = prevUsers.findIndex((u) => u.id === active.id);
-            if (activeIndex === -1) return prevUsers;
+            // Regra 1: Não permite mover para trás (a menos que seja para 'desistente')
+            if (overContainer !== 'desistente' && fromIndex > toIndex) {
+                toast.error("Não é possível mover um cliente para uma etapa anterior.");
+                return; // Aborta a operação
+            }
+
+            // Regra 2: Não permite pular direto de 'cadastrado' ou 'contatado' para 'realizado'
+            if (overContainer === 'realizado' && (activeContainer === 'cadastrado' || activeContainer === 'contatado')) {
+                toast.error("Um cliente precisa ser 'Agendado' antes de 'Realizado'.");
+                return; // Aborta a operação
+            }
+            // Se todas as regras passarem, o código continua normalmente...
+            const activeId = active.id;
             const newStatus = overContainer;
-            const updatedUsers = [...prevUsers];
-            updatedUsers[activeIndex] = { ...updatedUsers[activeIndex], status: newStatus };
-            return updatedUsers;
-        });
 
-        try {
-            const userRef = doc(db, 'users', active.id);
-            const newStatus = overContainer;
-            await updateDoc(userRef, { status: newStatus });
-            toast.success(`Cliente movido para "${KANBAN_COLUMNS[newStatus]?.title || newStatus}"!`);
-        } catch (error) {
-            toast.error("Erro ao atualizar o status do cliente.");
-            fetchUsers();
+            setUsers(prevUsers => prevUsers.map(user =>
+                user.id === activeId ? { ...user, status: newStatus } : user
+            ));
+
+            try {
+                await updateDoc(doc(db, 'users', activeId), { status: newStatus });
+                toast.success('Status do cliente atualizado!');
+            } catch (error) {
+                toast.error('Falha ao atualizar o status.');
+                // Reverte a mudança na UI em caso de erro no DB
+                setUsers(prevUsers => prevUsers.map(user =>
+                    user.id === activeId ? { ...user, status: activeContainer } : user
+                ));
+            }
         }
-    };
+    }
 
-    if (loading) { return <p>Carregando jornada dos clientes...</p>; }
+    if (isLoading) {
+        return <KanbanContainer>Carregando quadro...</KanbanContainer>;
+    }
 
-    // Sua renderização, mantida intacta
     return (
-        <div className="kanban-container">
-            <h2>Jornada do Cliente</h2>
-            <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-            >
-                <div className="kanban-board">
-                    {columns && Object.values(columns).map(column => (
-                        <KanbanColumn
-                            key={column.id}
-                            id={column.id}
-                            title={column.title}
-                            items={column.items}
-                        />
+        <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+        >
+            <KanbanContainer>
+                <BoardContainer>
+                    {KANBAN_COLUMNS.map(column => (
+                        <SortableContext key={column.id} items={columns[column.id]?.map(u => u.id) || []}>
+                            <KanbanColumn id={column.id} title={column.title} items={columns[column.id] || []} />
+                        </SortableContext>
                     ))}
-                </div>
-                <DragOverlay>
-                    {activeUser ? <KanbanCard id={activeUser.id} user={activeUser} isOverlay /> : null}
-                </DragOverlay>
-            </DndContext>
-        </div>
+                </BoardContainer>
+            </KanbanContainer>
+
+            <DragOverlay>
+                {activeCard ? <KanbanCard id={activeCard.id} user={activeCard} isDragging /> : null}
+            </DragOverlay>
+        </DndContext>
     );
 }
-export default KanbanPage;
