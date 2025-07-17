@@ -49,6 +49,7 @@ function ManualBookingPage({ currentUser }) {
         servicePrice: selectedService.price,
         date: date.toLocaleDateString('pt-BR'),
         time: selectedTime,
+        status: 'Agendado',
       });
       toast.success("Agendamento manual criado com sucesso!");
       navigate('/admin');

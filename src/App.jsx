@@ -21,6 +21,7 @@ import ServiceManagement from './pages/ServiceManagement';
 import AvailabilityManagement from './pages/AvailabilityManagement';
 import ManualBookingPage from './pages/ManualBookingPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import KanbanPage from './pages/KanbanPage';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -98,6 +99,7 @@ function App() {
 
             {/* Rotas de Admin Aninhadas usam o AdminLayout */}
             <Route path="/admin" element={<AdminRoute currentUser={currentUser}><AdminLayout /></AdminRoute>}>
+              <Route path="kanban" element={<KanbanPage />} />
               <Route index element={<AdminDashboard />} />
               <Route path="services" element={<ServiceManagement />} />
               <Route path="availability" element={<AvailabilityManagement />} />

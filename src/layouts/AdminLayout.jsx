@@ -11,6 +11,7 @@ function AdminLayout() {
             {/* O menu que ficará sempre visível */}
             <nav className="admin-nav">
                 <NavLink to="/admin" end>Ver Agendamentos</NavLink>
+                <NavLink to="/admin/kanban">Jornada do Cliente</NavLink>
                 <NavLink to="/admin/manual-booking">Agendamento Manual</NavLink>
                 <NavLink to="/admin/services">Gerenciar Serviços</NavLink>
                 <NavLink to="/admin/availability">Disponibilidade</NavLink>

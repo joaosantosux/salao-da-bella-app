@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
-import { doc, getDoc, addDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, addDoc, collection, updateDoc } from 'firebase/firestore';
 import Calendar from 'react-calendar';
 import toast from 'react-hot-toast';
 import { useAvailability } from '../hooks/useAvailability';
+import '../components/Calendar.css';
 import './BookingPage.css';
 
 function BookingPage({ currentUser }) {
@@ -35,7 +36,6 @@ function BookingPage({ currentUser }) {
     if (!service || !date || !selectedTime) return toast.error("Por favor, selecione data e horário.");
 
     try {
-      // Passo 1: Salva o agendamento no Firestore (isso já estava funcionando)
       await addDoc(collection(db, "agendamentos"), {
         userId: currentUser.uid,
         userName: currentUser.name,
@@ -44,37 +44,27 @@ function BookingPage({ currentUser }) {
         servicePrice: service.price,
         date: date.toLocaleDateString('pt-BR'),
         time: selectedTime,
+        status: 'Agendado',
       });
 
-      // ==========================================================
-      // INÍCIO DO CÓDIGO RESTAURADO
-      // ==========================================================
-      // Passo 2: Tenta enviar a notificação para a API na Vercel
-      try {
-        const notificationData = {
-          userName: currentUser.name,
-          serviceName: service.name,
-          date: date.toLocaleDateString('pt-BR'),
-          time: selectedTime,
-        };
+      // Atualiza o status do usuário na coleção 'users'
+      const userRef = doc(db, "users", currentUser.uid);
+      await updateDoc(userRef, { status: 'agendado' });
 
-        // !!!!!!!!!!   LEMBRE-SE DE COLOCAR SUA URL DA VERCEL AQUI   !!!!!!!!!!
+      try {
+        const notificationData = { userName: currentUser.name, serviceName: service.name, date: date.toLocaleDateString('pt-BR'), time: selectedTime };
+        // Lembre-se de colocar sua URL correta da Vercel aqui
         await fetch('https://telegram-bot-salao.vercel.app/api/sendMessage', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(notificationData),
         });
       } catch (notificationError) {
-        // Este console.error é para nós, desenvolvedores. O usuário não precisa saber da falha na notificação.
         console.error("Aviso: Agendamento salvo, mas notificação falhou:", notificationError);
       }
-      // ==========================================================
-      // FIM DO CÓDIGO RESTAURADO
-      // ==========================================================
 
       toast.success("Agendamento realizado com sucesso!");
-      navigate('/');
-
+      navigate('/meus-agendamentos');
     } catch (error) {
       console.error("ERRO DETALHADO AO SALVAR:", error);
       toast.error("Ocorreu um erro ao agendar. Tente novamente.");
@@ -90,7 +80,7 @@ function BookingPage({ currentUser }) {
         <p>{service.price}</p>
       </div>
       <h2>Selecione uma data</h2>
-      <Calendar onChange={setDate} value={date} minDate={new Date()} tileDisabled={({ date }) => !useAvailability(date).availableSlots.length && date.getDay() !== 0} />
+      <Calendar onChange={setDate} value={date} minDate={new Date()} />
       <div className="time-slots-container">
         <h2>Selecione um horário</h2>
         {availabilityLoading ? <p>Verificando...</p> : availableSlots.length > 0 ? (

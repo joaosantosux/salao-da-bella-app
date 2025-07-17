@@ -1,0 +1,61 @@
+.kanban-container {
+    max-width: 1400px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+.kanban-board {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    /* Permite rolar horizontalmente se não couber */
+    padding-bottom: 20px;
+}
+
+.kanban-column {
+    flex: 1;
+    min-width: 300px;
+    /* Largura mínima de cada coluna */
+    background-color: var(--color-background-card, #2f2f2f);
+    color: var(--color-text-light, #f0f0f0);
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.kanban-column h3 {
+    font-family: var(--font-heading);
+    padding-bottom: 10px;
+    border-bottom: 1px solid #444;
+    margin-top: 0;
+}
+
+.kanban-column-cards {
+    min-height: 200px;
+    /* Altura mínima para a área de cards */
+}
+
+.kanban-card {
+    background-color: #3a3a3a;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.kanban-card p {
+    font-size: 0.9em;
+    opacity: 0.8;
+    margin: 5px 0 0 0;
+}
+
+/* Adicione no final do arquivo */
+.kanban-card:hover {
+    cursor: grab;
+}
+
+/* Adicione no final do arquivo */
+.kanban-card.dragging {
+    opacity: 0.8;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    transform: scale(1.05);
+}
