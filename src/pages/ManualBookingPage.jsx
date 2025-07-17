@@ -1,30 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db } from '../firebaseConfig';
-import { collection, getDocs, doc, getDoc, addDoc, query, where } from 'firebase/firestore';
+import { db } from '../firebaseConfig.js';
+import { collection, getDocs, doc, addDoc, updateDoc, serverTimestamp, query, where } from 'firebase/firestore';
 import Calendar from 'react-calendar';
 import toast from 'react-hot-toast';
 import { useAvailability } from '../hooks/useAvailability';
 import './ManualBookingPage.css';
 
-// AQUI ESTÁ A CORREÇÃO: Adicionamos { currentUser } nos parênteses
-// para que o componente "receba" a informação do usuário logado.
-function ManualBookingPage({ currentUser }) {
+export function ManualBookingPage({ currentUser }) {
+  const [allClients, setAllClients] = useState([]);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [clientMode, setClientMode] = useState('select');
+  const [newClientName, setNewClientName] = useState('');
+  const [newClientEmail, setNewClientEmail] = useState('');
+
   const [services, setServices] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
-  const [clientName, setClientName] = useState('');
   const [date, setDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState(null);
   const { availableSlots, loading: availabilityLoading } = useAvailability(date);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchServices = async () => {
-      const servicesCollectionRef = collection(db, 'servicos');
-      const data = await getDocs(servicesCollectionRef);
-      setServices(data.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+    const fetchData = async () => {
+      try {
+        const servicesCollectionRef = collection(db, 'servicos');
+        const servicesData = await getDocs(servicesCollectionRef);
+        setServices(servicesData.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+
+        const clientsQuery = query(collection(db, "users"), where("role", "==", "customer"));
+        const clientsData = await getDocs(clientsQuery);
+        setAllClients(clientsData.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+      } catch (error) {
+        console.error("ERRO AO BUSCAR DADOS INICIAIS:", error);
+        toast.error("Falha ao carregar dados da página.");
+      }
     };
-    fetchServices();
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -32,17 +44,45 @@ function ManualBookingPage({ currentUser }) {
   }, [date, selectedService]);
 
   const handleSaveBooking = async () => {
-    if (!clientName || !selectedService || !date || !selectedTime) {
-      return toast.error("Preencha todos os campos: Cliente, Serviço, Data e Horário.");
+    if (!selectedService || !date || !selectedTime) {
+      return toast.error("Preencha todos os campos: Serviço, Data e Horário.");
     }
-    // Agora o currentUser não será mais indefinido
     if (!currentUser) {
       return toast.error("Erro: Administrador não identificado. Tente fazer login novamente.");
     }
 
+    let clientIdToUse = selectedUserId;
+    let clientNameToUse = allClients.find(c => c.id === selectedUserId)?.name;
+
+    if (clientMode === 'add') {
+      if (!newClientName.trim()) {
+        return toast.error("O nome do novo cliente é obrigatório.");
+      }
+      try {
+        const newUserRef = await addDoc(collection(db, 'users'), {
+          name: newClientName,
+          email: newClientEmail || null,
+          role: 'customer',
+          status: 'cadastrado',
+          createdAt: serverTimestamp(),
+        });
+        clientIdToUse = newUserRef.id;
+        clientNameToUse = newClientName;
+        toast.success(`Cliente "${newClientName}" criado com sucesso!`);
+      } catch (error) {
+        console.error("Erro ao criar novo cliente:", error);
+        return toast.error("Não foi possível criar o novo cliente.");
+      }
+    }
+
+    if (!clientIdToUse) {
+      return toast.error("Selecione um cliente existente ou cadastre um novo.");
+    }
+
     try {
       await addDoc(collection(db, "agendamentos"), {
-        userName: clientName,
+        userId: clientIdToUse,
+        userName: clientNameToUse,
         adminId: currentUser.uid,
         serviceId: selectedService.id,
         serviceName: selectedService.name,
@@ -51,13 +91,32 @@ function ManualBookingPage({ currentUser }) {
         time: selectedTime,
         status: 'Agendado',
       });
-      toast.success("Agendamento manual criado com sucesso!");
-      navigate('/admin');
+
+      const userDocRef = doc(db, 'users', clientIdToUse);
+      await updateDoc(userDocRef, { status: 'agendado' });
+
+      toast.success("Agendamento manual criado e status do cliente atualizado!");
+      navigate('/admin/jornada-cliente');
     } catch (error) {
       toast.error("Erro ao criar agendamento.");
       console.error("Erro no agendamento manual:", error);
     }
   };
+
+  const getSelectedClientName = () => {
+    if (clientMode === 'select' && selectedUserId) {
+      return allClients.find(c => c.id === selectedUserId)?.name || '';
+    }
+    if (clientMode === 'add') {
+      return newClientName;
+    }
+    return '';
+  };
+
+  // --- INÍCIO DA CORREÇÃO ---
+  // Criamos uma variável para verificar se a etapa do cliente está concluída.
+  const isClientStepComplete = (clientMode === 'select' && selectedUserId) || (clientMode === 'add' && newClientName.trim() !== '');
+  // --- FIM DA CORREÇÃO ---
 
   return (
     <div className="manual-booking-container">
@@ -73,12 +132,34 @@ function ManualBookingPage({ currentUser }) {
             ))}
           </div>
         </div>
+
         {selectedService && (
-          <>
-            <div className="step">
-              <h3>2. Digite o Nome do Cliente</h3>
-              <input type="text" placeholder="Nome do cliente" value={clientName} onChange={(e) => setClientName(e.target.value)} className="client-name-input" />
+          <div className="step">
+            <h3>2. Selecione ou Cadastre o Cliente</h3>
+            <div className="client-mode-selector">
+              <button onClick={() => setClientMode('select')} className={clientMode === 'select' ? 'selected' : ''}>Cliente Existente</button>
+              <button onClick={() => setClientMode('add')} className={clientMode === 'add' ? 'selected' : ''}>Novo Cliente</button>
             </div>
+
+            {clientMode === 'select' ? (
+              <select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)} className="client-name-input">
+                <option value="">-- Selecione um cliente --</option>
+                {allClients.map(client => (
+                  <option key={client.id} value={client.id}>{client.name}</option>
+                ))}
+              </select>
+            ) : (
+              <div className="new-client-form">
+                <input type="text" placeholder="Nome do novo cliente" value={newClientName} onChange={(e) => setNewClientName(e.target.value)} />
+                <input type="email" placeholder="Email (opcional)" value={newClientEmail} onChange={(e) => setNewClientEmail(e.target.value)} />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* --- A CONDIÇÃO AQUI FOI SIMPLIFICADA --- */}
+        {selectedService && isClientStepComplete && (
+          <>
             <div className="step">
               <h3>3. Selecione a Data e Horário</h3>
               <div className="calendar-time-wrapper">
@@ -92,11 +173,12 @@ function ManualBookingPage({ currentUser }) {
                 </div>
               </div>
             </div>
-            {selectedTime && clientName && (
+
+            {selectedTime && (
               <div className="step">
                 <h3>4. Confirmar Agendamento</h3>
                 <div className="confirmation-summary">
-                  <p><strong>Cliente:</strong> {clientName}</p>
+                  <p><strong>Cliente:</strong> {getSelectedClientName()}</p>
                   <p><strong>Serviço:</strong> {selectedService.name}</p>
                   <p><strong>Data:</strong> {date.toLocaleDateString('pt-BR')}</p>
                   <p><strong>Horário:</strong> {selectedTime}</p>
@@ -110,5 +192,3 @@ function ManualBookingPage({ currentUser }) {
     </div>
   );
 }
-
-export default ManualBookingPage;

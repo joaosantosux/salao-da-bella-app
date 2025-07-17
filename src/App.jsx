@@ -19,9 +19,9 @@ import BookingPage from './pages/BookingPage';
 import AdminDashboard from './pages/AdminDashboard';
 import ServiceManagement from './pages/ServiceManagement';
 import AvailabilityManagement from './pages/AvailabilityManagement';
-import ManualBookingPage from './pages/ManualBookingPage';
+import { ManualBookingPage } from './pages/ManualBookingPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import KanbanPage from './pages/KanbanPage';
+import { KanbanPage } from './pages/KanbanPage';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
