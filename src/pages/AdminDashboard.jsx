@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
-import { db } from '../firebaseConfig';
-import { collection, query, where, getDocs, orderBy, doc, deleteDoc } from 'firebase/firestore';
+import { db } from '../firebaseConfig.js';
+import { collection, query, where, getDocs, orderBy, doc, updateDoc } from 'firebase/firestore';
 import Calendar from 'react-calendar';
-import toast from 'react-hot-toast'; // Garante que o toast está importado
+import toast from 'react-hot-toast';
 import 'react-calendar/dist/Calendar.css';
 import './AdminDashboard.css';
 
@@ -18,11 +17,14 @@ function AdminDashboard() {
     setBookings([]);
     try {
       let q;
+      const bookingsCollection = collection(db, "agendamentos");
+      const activeStatus = "Agendado";
+
       if (viewMode === 'date') {
         const formattedDate = selectedDate.toLocaleDateString('pt-BR');
-        q = query(collection(db, "agendamentos"), where("date", "==", formattedDate), orderBy("time"));
+        q = query(bookingsCollection, where("date", "==", formattedDate), where("status", "==", activeStatus), orderBy("time"));
       } else {
-        q = query(collection(db, "agendamentos"), orderBy("date", "asc"), orderBy("time"));
+        q = query(bookingsCollection, where("status", "==", activeStatus), orderBy("date", "asc"), orderBy("time"));
       }
       const querySnapshot = await getDocs(q);
       const fetchedBookings = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -39,25 +41,60 @@ function AdminDashboard() {
     fetchBookings();
   }, [selectedDate, viewMode]);
 
-  // ==========================================================
-  // AQUI ESTÁ A MUDANÇA: Usando o toast de confirmação
-  // ==========================================================
-  const handleCancelBooking = (bookingId) => {
+  const handleCancelBooking = (bookingToCancel) => {
+    const { id: bookingId, userId } = bookingToCancel;
+    
+    if (!userId) {
+      toast.error(
+        "Agendamento antigo. O Kanban não será atualizado pois não há um cliente vinculado.", 
+        { duration: 5000 }
+      );
+      const bookingRef = doc(db, "agendamentos", bookingId);
+      updateDoc(bookingRef, { status: "Cancelado" }).then(() => {
+        fetchBookings();
+      });
+      return;
+    }
+
     toast((t) => (
       <div className="confirmation-toast">
         <h4>Cancelar Agendamento?</h4>
-        <p>Esta ação não pode ser desfeita.</p>
+        <p>Esta ação irá atualizar o status do cliente no Kanban.</p>
         <div className="toast-buttons">
           <button
             className="confirm-button-toast"
             onClick={async () => {
-              toast.dismiss(t.id); // Fecha o toast
+              toast.dismiss(t.id);
               try {
-                await deleteDoc(doc(db, "agendamentos", bookingId));
-                toast.success('Agendamento cancelado!');
-                fetchBookings(); // Atualiza a lista de agendamentos na tela
+                const bookingRef = doc(db, "agendamentos", bookingId);
+                await updateDoc(bookingRef, { status: "Cancelado" });
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                const otherBookingsQuery = query(
+                  collection(db, "agendamentos"),
+                  where("userId", "==", userId),
+                  where("status", "==", "Agendado")
+                );
+                const snapshot = await getDocs(otherBookingsQuery);
+                const futureBookings = snapshot.docs.filter(d => {
+                    const appDate = new Date(d.data().date.split('/').reverse().join('-'));
+                    return appDate >= today;
+                });
+
+                if (futureBookings.length === 0) {
+                  const userRef = doc(db, "users", userId);
+                  await updateDoc(userRef, { status: "desistente" });
+                  toast.success('Agendamento cancelado e status do cliente atualizado!');
+                } else {
+                  toast.success('Agendamento cancelado!');
+                }
+                
+                fetchBookings();
               } catch (error) {
                 toast.error('Erro ao cancelar o agendamento.');
+                console.error("Erro ao cancelar: ", error);
               }
             }}
           >
@@ -70,9 +107,6 @@ function AdminDashboard() {
       </div>
     ));
   };
-  // ==========================================================
-  // FIM DA MUDANÇA
-  // ==========================================================
 
   return (
     <>
@@ -95,7 +129,7 @@ function AdminDashboard() {
                   <div className="booking-details-admin">
                     <strong>{booking.time}</strong> - {booking.serviceName} <span>({booking.userName})</span>
                   </div>
-                  <button className="admin-cancel-button" onClick={() => handleCancelBooking(booking.id)}>Cancelar</button>
+                  <button className="admin-cancel-button" onClick={() => handleCancelBooking(booking)}>Cancelar</button>
                 </div>
               ))
             ) : <p>Nenhum agendamento para esta data.</p>}
@@ -111,7 +145,7 @@ function AdminDashboard() {
                 <div className="booking-details">
                   <strong>{booking.time}</strong> - {booking.serviceName} <span>({booking.userName})</span>
                 </div>
-                <button className="admin-cancel-button" onClick={() => handleCancelBooking(booking.id)}>Cancelar</button>
+                <button className="admin-cancel-button" onClick={() => handleCancelBooking(booking)}>Cancelar</button>
               </div>
             ))
           ) : <p>Nenhum agendamento futuro encontrado.</p>}
@@ -121,4 +155,6 @@ function AdminDashboard() {
   );
 }
 
+// --- AQUI ESTÁ A CORREÇÃO ---
+// Trocamos 'export { AdminDashboard };' por 'export default AdminDashboard;'
 export default AdminDashboard;

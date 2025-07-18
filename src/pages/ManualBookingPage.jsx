@@ -5,7 +5,37 @@ import { collection, getDocs, doc, addDoc, updateDoc, serverTimestamp, query, wh
 import Calendar from 'react-calendar';
 import toast from 'react-hot-toast';
 import { useAvailability } from '../hooks/useAvailability';
+// --- PASSO 2: Importando o novo componente ---
+import Select from 'react-select';
 import './ManualBookingPage.css';
+
+// --- PASSO 3: Estilos customizados para o novo componente de busca ---
+const customSelectStyles = {
+  control: (styles) => ({
+    ...styles,
+    backgroundColor: '#242424',
+    borderColor: '#555',
+    color: 'white',
+    boxShadow: 'none',
+    '&:hover': {
+      borderColor: '#888',
+    }
+  }),
+  menu: (styles) => ({
+    ...styles,
+    backgroundColor: '#2f2f2f',
+  }),
+  option: (styles, { isFocused, isSelected }) => ({
+    ...styles,
+    backgroundColor: isSelected ? '#646cff' : isFocused ? '#444' : '#2f2f2f',
+    color: 'white',
+    ':active': {
+      backgroundColor: '#555',
+    },
+  }),
+  singleValue: (styles) => ({ ...styles, color: 'white' }),
+  input: (styles) => ({ ...styles, color: 'white' }),
+};
 
 export function ManualBookingPage({ currentUser }) {
   const [allClients, setAllClients] = useState([]);
@@ -30,7 +60,19 @@ export function ManualBookingPage({ currentUser }) {
 
         const clientsQuery = query(collection(db, "users"), where("role", "==", "customer"));
         const clientsData = await getDocs(clientsQuery);
-        setAllClients(clientsData.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+        const clientsList = clientsData.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+        // 1. Ordena a lista de clientes por nome
+        clientsList.sort((a, b) => a.name.localeCompare(b.name));
+
+        // 2. Formata a lista para o padrão { value, label } que o react-select exige
+        const clientOptions = clientsList.map(client => ({
+          value: client.id,
+          label: client.name
+        }));
+
+        setAllClients(clientOptions);
+        // --- FIM DA CORREÇÃO ---
+
       } catch (error) {
         console.error("ERRO AO BUSCAR DADOS INICIAIS:", error);
         toast.error("Falha ao carregar dados da página.");
@@ -105,7 +147,7 @@ export function ManualBookingPage({ currentUser }) {
 
   const getSelectedClientName = () => {
     if (clientMode === 'select' && selectedUserId) {
-      return allClients.find(c => c.id === selectedUserId)?.name || '';
+      return allClients.find(c => c.value === selectedUserId)?.label || '';
     }
     if (clientMode === 'add') {
       return newClientName;
@@ -142,12 +184,15 @@ export function ManualBookingPage({ currentUser }) {
             </div>
 
             {clientMode === 'select' ? (
-              <select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)} className="client-name-input">
-                <option value="">-- Selecione um cliente --</option>
-                {allClients.map(client => (
-                  <option key={client.id} value={client.id}>{client.name}</option>
-                ))}
-              </select>
+              // --- PASSO 3: Substituindo o <select> pelo <Select> de busca ---
+
+              <Select
+                options={allClients}
+                onChange={(selectedOption) => setSelectedUserId(selectedOption.value)}
+                placeholder="Digite para pesquisar ou selecione um cliente..."
+                styles={customSelectStyles}
+                noOptionsMessage={() => "Nenhum cliente encontrado"}
+              />
             ) : (
               <div className="new-client-form">
                 <input type="text" placeholder="Nome do novo cliente" value={newClientName} onChange={(e) => setNewClientName(e.target.value)} />

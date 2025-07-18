@@ -52,30 +52,51 @@ export function KanbanPage() {
         };
         fetchData();
     }, []);
-
+    // --- INÍCIO DA LÓGICA REFINADA ---
     const enrichedUsers = useMemo(() => {
+        // Pega a data de hoje, zerando as horas para garantir a comparação correta
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
         return users.map(user => {
-            const userAppointment = appointments
-                .filter(app => app.userId === user.id)
+            // 1. Filtra para pegar apenas os agendamentos FUTUROS deste usuário
+            const futureAppointments = appointments
+                .filter(app => {
+                    if (app.userId !== user.id) return false;
+
+                    // Agora só consideramos agendamentos com status 'Agendado'
+                    if (app.status !== 'Agendado') return false;
+
+                    const appDate = new Date(app.date.split('/').reverse().join('-'));
+                    return appDate >= today;
+                })
+                // 2. Ordena os agendamentos futuros do mais próximo para o mais distante
                 .sort((a, b) => {
-                    const dateA = a.date ? new Date(a.date.split('/').reverse().join('-')) : 0;
-                    const dateB = b.date ? new Date(b.date.split('/').reverse().join('-')) : 0;
-                    return dateB - dateA;
-                })[0];
-            if (userAppointment) {
+                    const dateA = new Date(a.date.split('/').reverse().join('-'));
+                    const dateB = new Date(b.date.split('/').reverse().join('-'));
+                    return dateA - dateB;
+                });
+
+            // 3. Pega o primeiro da lista (o próximo agendamento)
+            const nextAppointment = futureAppointments[0];
+
+            if (nextAppointment) {
                 return {
                     ...user,
                     appointmentInfo: {
-                        serviceName: userAppointment.serviceName,
-                        date: userAppointment.date,
-                        time: userAppointment.time,
+                        serviceName: nextAppointment.serviceName,
+                        date: nextAppointment.date,
+                        time: nextAppointment.time,
+
+                        // 4. Adiciona a contagem de agendamentos futuros
+                        count: futureAppointments.length,
                     }
                 };
             }
             return user;
         });
     }, [users, appointments]);
-
+    // --- FIM DA LÓGICA REFINADA ---
     const columns = useMemo(() => {
         return KANBAN_COLUMNS.reduce((acc, column) => {
             acc[column.id] = enrichedUsers.filter(user => user.status === column.id);
