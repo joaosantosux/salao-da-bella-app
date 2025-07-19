@@ -12,6 +12,10 @@ const ColumnContainer = styled.div`
   min-height: 200px;
   display: flex;
   flex-direction: column;
+  /* --- INÍCIO DAS CORREÇÕES DE LAYOUT --- */
+  width: 320px;       /* Largura padrão da coluna */
+  flex-shrink: 0;   /* Impede que a coluna encolha */
+  /* --- FIM DAS CORREÇÕES DE LAYOUT --- */
 `;
 
 const ColumnTitle = styled.h3`

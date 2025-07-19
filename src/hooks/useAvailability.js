@@ -12,6 +12,7 @@ export function useAvailability(date) {
       setLoading(true);
 
       try {
+        // ... (toda a sua lógica para buscar configurações e exceções permanece a mesma)
         const settingsRef = doc(db, 'settings', 'availability');
         const settingsSnap = await getDoc(settingsRef);
         if (!settingsSnap.exists()) {
@@ -29,7 +30,8 @@ export function useAvailability(date) {
         if (overrideSnap.exists()) {
           potentialSlots = overrideSnap.data().timeSlots;
         } else {
-          if (!defaultSettings.workingDays.includes(date.getDay())) {
+          const dayOfWeek = (date.getDay() + 6) % 7; // Ajusta para Segunda = 0 ... Domingo = 6
+          if (!defaultSettings.workingDays.includes(dayOfWeek)) {
             setAvailableSlots([]);
             setLoading(false);
             return;
@@ -38,18 +40,22 @@ export function useAvailability(date) {
         }
 
         const today = new Date();
-
-        // ==========================================================
-        // AQUI ESTÁ A CORREÇÃO
-        // Em vez de comparar com setHours, comparamos a data como texto, que é mais seguro.
         if (date.toDateString() === today.toDateString()) {
-        // ==========================================================
           const currentTime = today.getHours().toString().padStart(2, '0') + ':' + today.getMinutes().toString().padStart(2, '0');
           potentialSlots = potentialSlots.filter(slot => slot > currentTime);
         }
 
         const formattedDate = date.toLocaleDateString('pt-BR');
-        const bookingsQuery = query(collection(db, 'agendamentos'), where('date', '==', formattedDate));
+
+        // --- AQUI ESTÁ A CORREÇÃO ---
+        // Adicionamos a condição para buscar apenas agendamentos com status "Agendado"
+        const bookingsQuery = query(
+          collection(db, 'agendamentos'),
+          where('date', '==', formattedDate),
+          where('status', '==', 'Agendado') // <-- A LINHA MÁGICA
+        );
+        // --- FIM DA CORREÇÃO ---
+
         const bookingsSnap = await getDocs(bookingsQuery);
         const bookedTimes = bookingsSnap.docs.map(d => d.data().time);
 

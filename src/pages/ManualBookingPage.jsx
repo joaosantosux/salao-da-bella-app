@@ -94,7 +94,10 @@ export function ManualBookingPage({ currentUser }) {
     }
 
     let clientIdToUse = selectedUserId;
-    let clientNameToUse = allClients.find(c => c.id === selectedUserId)?.name;
+     // --- AQUI ESTÁ A CORREÇÃO ---
+    // Buscamos o cliente na lista 'allClients' usando 'value' e pegamos o 'label' para o nome.
+    
+    let clientNameToUse = allClients.find(c => c.value === selectedUserId)?.label;
 
     if (clientMode === 'add') {
       if (!newClientName.trim()) {

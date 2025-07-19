@@ -56,51 +56,53 @@ const MoreAppointmentsIndicator = styled.p`
 `;
 
 export function KanbanCard({ id, user, isDragging }) {
-    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
 
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-    };
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'agendado': return '#f0ad4e'; // Laranja
-            case 'realizado': return '#5cb85c'; // Verde
-            case 'desistente': return '#d9534f'; // Vermelho
-            case 'contatado': return '#5bc0de'; // Azul claro
-            default: return '#5DADE2'; // Azul padrão
-        }
-    };
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'agendado': return '#f0ad4e'; // Laranja
+      case 'realizado': return '#5cb85c'; // Verde
+      case 'desistente': return '#d9534f'; // Vermelho
+      case 'contatado': return '#5bc0de'; // Azul claro
+      // --- MUDANÇA AQUI: Adicionamos a cor para o novo status ---
+      case 'nao_compareceu': return '#777777'; // Cinza
+      default: return '#5DADE2'; // Azul padrão
+    }
+  };
 
-    return (
-        <CardContainer
-            ref={setNodeRef}
-            style={style}
-            {...attributes}
-            {...listeners}
-            $statusColor={getStatusColor(user.status)}
-            $isDragging={isDragging}
-        >
-            <CardHeader>{user.name || 'Nome não disponível'}</CardHeader>
-            <CardBody>
-                <p>{user.email || 'Email não disponível'}</p>
-            </CardBody>
+  return (
+    <CardContainer
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      $statusColor={getStatusColor(user.status)}
+      $isDragging={isDragging}
+    >
+      <CardHeader>{user.name || 'Nome não disponível'}</CardHeader>
+      <CardBody>
+        <p>{user.email || 'Email não disponível'}</p>
+      </CardBody>
 
-            {/* Bloco que exibe as informações do agendamento */}
-            {user.appointmentInfo && (
-                <AppointmentInfo>
-                    <p>Próximo: {user.appointmentInfo.serviceName}</p>
-                    <p>{user.appointmentInfo.date} às {user.appointmentInfo.time}</p>
+      {/* Bloco que exibe as informações do agendamento */}
+      {user.appointmentInfo && (
+        <AppointmentInfo>
+          <p>Próximo: {user.appointmentInfo.serviceName}</p>
+          <p>{user.appointmentInfo.date} às {user.appointmentInfo.time}</p>
 
-                    {/* Indicador de múltiplos agendamentos */}
-                    {user.appointmentInfo.count > 1 && (
-                        <MoreAppointmentsIndicator>
-                            (+{user.appointmentInfo.count - 1} outro agendamento)
-                        </MoreAppointmentsIndicator>
-                    )}
-                </AppointmentInfo>
-            )}
-        </CardContainer>
-    );
+          {/* Indicador de múltiplos agendamentos */}
+          {user.appointmentInfo.count > 1 && (
+            <MoreAppointmentsIndicator>
+              (+{user.appointmentInfo.count - 1} outro agendamento)
+            </MoreAppointmentsIndicator>
+          )}
+        </AppointmentInfo>
+      )}
+    </CardContainer>
+  );
 }
