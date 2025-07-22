@@ -31,7 +31,7 @@ export function useAvailability(date) {
           potentialSlots = overrideSnap.data().timeSlots;
         } else {
           const dayOfWeek = (date.getDay() + 6) % 7; // Ajusta para Segunda = 0 ... Domingo = 6
-          if (!defaultSettings.workingDays.includes(dayOfWeek)) {
+          if (!defaultSettings.workingDays.includes(date.getDay())) {
             setAvailableSlots([]);
             setLoading(false);
             return;

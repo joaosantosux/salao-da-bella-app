@@ -94,9 +94,9 @@ export function ManualBookingPage({ currentUser }) {
     }
 
     let clientIdToUse = selectedUserId;
-     // --- AQUI ESTÁ A CORREÇÃO ---
+    // --- AQUI ESTÁ A CORREÇÃO ---
     // Buscamos o cliente na lista 'allClients' usando 'value' e pegamos o 'label' para o nome.
-    
+
     let clientNameToUse = allClients.find(c => c.value === selectedUserId)?.label;
 
     if (clientMode === 'add') {
@@ -141,7 +141,16 @@ export function ManualBookingPage({ currentUser }) {
       await updateDoc(userDocRef, { status: 'agendado' });
 
       toast.success("Agendamento manual criado e status do cliente atualizado!");
-      navigate('/admin/jornada-cliente');
+      // --- INÍCIO DA NOVA LÓGICA DE "RESET" ---
+      // Limpa todos os estados para recomeçar o formulário
+      setSelectedService(null);
+      setSelectedUserId(null);
+      setClientMode('select');
+      setNewClientName('');
+      setNewClientEmail('');
+      setDate(new Date()); // Opcional: reseta a data para hoje
+      setSelectedTime(null);
+      // A linha 'navigate' foi removida.
     } catch (error) {
       toast.error("Erro ao criar agendamento.");
       console.error("Erro no agendamento manual:", error);
