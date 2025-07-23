@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "appcreate-01916601"
-  }
+  },
+  "targets": {
+    "appcreate-01916601": {
+      "hosting": {
+        "salao-da-bella": [
+          "salao-da-bella"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
