@@ -129,7 +129,7 @@ export function ManualBookingPage({ currentUser }) {
         userId: clientIdToUse,
         userName: clientNameToUse,
         adminId: currentUser.uid,
-        serviceId: selectedService.id,
+        serviceId: selectedService.id,git add .
         serviceName: selectedService.name,
         servicePrice: selectedService.price,
         date: date.toLocaleDateString('pt-BR'),
@@ -141,6 +141,17 @@ export function ManualBookingPage({ currentUser }) {
       await updateDoc(userDocRef, { status: 'agendado' });
 
       toast.success("Agendamento manual criado e status do cliente atualizado!");
+      // --- INÍCIO DA ADIÇÃO ---
+      // Encontra o nome do serviço selecionado para usar na mensagem
+      const serviceName = services.find(s => s.id === selectedService)?.name || 'serviço selecionado';
+
+      // Chama a função de notificação após salvar tudo
+      await sendWhatsAppNotification(selectedCustomer, serviceName, selectedDate.toLocaleDateString('pt-BR'), selectedTime);
+      // --- FIM DA ADIÇÃO ---
+
+      // Reset form
+      setSelectedCustomer(null);
+      // ... resto da função de reset
       // --- INÍCIO DA NOVA LÓGICA DE "RESET" ---
       // Limpa todos os estados para recomeçar o formulário
       setSelectedService(null);
@@ -171,6 +182,37 @@ export function ManualBookingPage({ currentUser }) {
   // Criamos uma variável para verificar se a etapa do cliente está concluída.
   const isClientStepComplete = (clientMode === 'select' && selectedUserId) || (clientMode === 'add' && newClientName.trim() !== '');
   // --- FIM DA CORREÇÃO ---
+  const sendWhatsAppNotification = async (customer, serviceName, date, time) => {
+    // Formata o número para o padrão E.164 que a Twilio exige (ex: +5542999998888)
+    // Isso remove espaços, traços, parênteses e garante que comece com o código do país.
+    const formatedPhoneNumber = `+${customer.phone.replace(/\D/g, '')}`;
+
+    const messageBody = `Olá, ${customer.name}! Seu agendamento para o serviço de "${serviceName}" no dia ${date} às ${time} foi confirmado com sucesso. Te esperamos! - Salão da Bella`;
+
+    try {
+      const response = await fetch('/api/send-whatsapp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: formatedPhoneNumber, // Número do cliente formatado
+          body: messageBody,       // A mensagem que escrevemos
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Notificação de WhatsApp enviada com sucesso!');
+      } else {
+        throw new Error(data.error || 'Falha ao enviar notificação.');
+      }
+    } catch (error) {
+      console.error('Erro na notificação via WhatsApp:', error);
+      toast.error(`Agendamento salvo, mas falha ao notificar: ${error.message}`);
+    }
+  };
 
   return (
     <div className="manual-booking-container">
