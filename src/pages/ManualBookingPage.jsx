@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig.js';
-import { collection, getDocs, doc, addDoc, updateDoc, serverTimestamp, query, where, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, addDoc, updateDoc, serverTimestamp, query, where } from 'firebase/firestore';
 import Calendar from 'react-calendar';
 import toast from 'react-hot-toast';
 import { useAvailability } from '../hooks/useAvailability';
+// --- PASSO 2: Importando o novo componente ---
 import Select from 'react-select';
 import './ManualBookingPage.css';
 
+// --- PASSO 3: Estilos customizados para o novo componente de busca ---
 const customSelectStyles = {
   control: (styles) => ({
     ...styles,
@@ -36,8 +39,7 @@ const customSelectStyles = {
 
 export function ManualBookingPage({ currentUser }) {
   const [allClients, setAllClients] = useState([]);
-  const [clientOptions, setClientOptions] = useState([]);
-  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [selectedUserId, setSelectedUserId] = useState('');
   const [clientMode, setClientMode] = useState('select');
   const [newClientName, setNewClientName] = useState('');
   const [newClientEmail, setNewClientEmail] = useState('');
@@ -47,6 +49,7 @@ export function ManualBookingPage({ currentUser }) {
   const [date, setDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState(null);
   const { availableSlots, loading: availabilityLoading } = useAvailability(date);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,15 +61,17 @@ export function ManualBookingPage({ currentUser }) {
         const clientsQuery = query(collection(db, "users"), where("role", "==", "customer"));
         const clientsData = await getDocs(clientsQuery);
         const clientsList = clientsData.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+        // 1. Ordena a lista de clientes por nome
         clientsList.sort((a, b) => a.name.localeCompare(b.name));
 
-        setAllClients(clientsList); // Guarda os dados completos dos clientes
-
-        const options = clientsList.map(client => ({
+        // 2. Formata a lista para o padrão { value, label } que o react-select exige
+        const clientOptions = clientsList.map(client => ({
           value: client.id,
           label: client.name
         }));
-        setClientOptions(options); // Guarda apenas as opções para o Select
+
+        setAllClients(clientOptions);
+        // --- FIM DA CORREÇÃO ---
 
       } catch (error) {
         console.error("ERRO AO BUSCAR DADOS INICIAIS:", error);
@@ -80,10 +85,6 @@ export function ManualBookingPage({ currentUser }) {
     setSelectedTime(null);
   }, [date, selectedService]);
 
-  // ==================================================================
-  // INÍCIO DA ÁREA CORRIGIDA
-  // ==================================================================
-
   const handleSaveBooking = async () => {
     if (!selectedService || !date || !selectedTime) {
       return toast.error("Preencha todos os campos: Serviço, Data e Horário.");
@@ -93,7 +94,10 @@ export function ManualBookingPage({ currentUser }) {
     }
 
     let clientIdToUse = selectedUserId;
-    let clientNameToUse = clientOptions.find(c => c.value === selectedUserId)?.label;
+    // --- AQUI ESTÁ A CORREÇÃO ---
+    // Buscamos o cliente na lista 'allClients' usando 'value' e pegamos o 'label' para o nome.
+
+    let clientNameToUse = allClients.find(c => c.value === selectedUserId)?.label;
 
     if (clientMode === 'add') {
       if (!newClientName.trim()) {
@@ -121,10 +125,6 @@ export function ManualBookingPage({ currentUser }) {
     }
 
     try {
-      const bookingDateTime = new Date(date);
-      const [hours, minutes] = selectedTime.split(':');
-      bookingDateTime.setHours(parseInt(hours, 10), parseInt(minutes, 10));
-
       await addDoc(collection(db, "agendamentos"), {
         userId: clientIdToUse,
         userName: clientNameToUse,
@@ -132,7 +132,7 @@ export function ManualBookingPage({ currentUser }) {
         serviceId: selectedService.id,
         serviceName: selectedService.name,
         servicePrice: selectedService.price,
-        date: Timestamp.fromDate(bookingDateTime),
+        date: date.toLocaleDateString('pt-BR'),
         time: selectedTime,
         status: 'Agendado',
       });
@@ -141,58 +141,25 @@ export function ManualBookingPage({ currentUser }) {
       await updateDoc(userDocRef, { status: 'agendado' });
 
       toast.success("Agendamento manual criado e status do cliente atualizado!");
-
-      // A chamada correta para a notificação do admin
-      await sendAdminWhatsAppNotification(
-        clientNameToUse,
-        selectedService.name,
-        date.toLocaleDateString('pt-BR'),
-        selectedTime
-      );
-
-      // Reset do formulário
+      // --- INÍCIO DA NOVA LÓGICA DE "RESET" ---
+      // Limpa todos os estados para recomeçar o formulário
       setSelectedService(null);
       setSelectedUserId(null);
       setClientMode('select');
       setNewClientName('');
       setNewClientEmail('');
-      setDate(new Date());
+      setDate(new Date()); // Opcional: reseta a data para hoje
       setSelectedTime(null);
+      // A linha 'navigate' foi removida.
     } catch (error) {
       toast.error("Erro ao criar agendamento.");
       console.error("Erro no agendamento manual:", error);
     }
   };
 
-  const sendAdminWhatsAppNotification = async (clientName, serviceName, date, time) => {
-    const messageBody = `Novo Agendamento! 🔔\n\nCliente: ${clientName}\nServiço: ${serviceName}\nData: ${date}\nHorário: ${time}`;
-
-    try {
-      // Usamos a nossa API da Vercel para enviar a mensagem
-      const response = await fetch('/api/send-whatsapp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ body: messageBody }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast.success('Notificação enviada para o admin!');
-      } else {
-        throw new Error(data.error || 'Falha ao enviar notificação.');
-      }
-    } catch (error) {
-      console.error('Erro na notificação para admin:', error);
-      toast.error(`Agendamento salvo, mas falha ao notificar o admin: ${error.message}`);
-    }
-  };
-
   const getSelectedClientName = () => {
     if (clientMode === 'select' && selectedUserId) {
-      return clientOptions.find(c => c.value === selectedUserId)?.label || '';
+      return allClients.find(c => c.value === selectedUserId)?.label || '';
     }
     if (clientMode === 'add') {
       return newClientName;
@@ -200,11 +167,10 @@ export function ManualBookingPage({ currentUser }) {
     return '';
   };
 
+  // --- INÍCIO DA CORREÇÃO ---
+  // Criamos uma variável para verificar se a etapa do cliente está concluída.
   const isClientStepComplete = (clientMode === 'select' && selectedUserId) || (clientMode === 'add' && newClientName.trim() !== '');
-
-  // ==================================================================
-  // FIM DA ÁREA CORRIGIDA
-  // ==================================================================
+  // --- FIM DA CORREÇÃO ---
 
   return (
     <div className="manual-booking-container">
@@ -230,14 +196,14 @@ export function ManualBookingPage({ currentUser }) {
             </div>
 
             {clientMode === 'select' ? (
+              // --- PASSO 3: Substituindo o <select> pelo <Select> de busca ---
+
               <Select
-                options={clientOptions}
-                onChange={(selectedOption) => setSelectedUserId(selectedOption ? selectedOption.value : null)}
-                value={clientOptions.find(c => c.value === selectedUserId)}
+                options={allClients}
+                onChange={(selectedOption) => setSelectedUserId(selectedOption.value)}
                 placeholder="Digite para pesquisar ou selecione um cliente..."
                 styles={customSelectStyles}
                 noOptionsMessage={() => "Nenhum cliente encontrado"}
-                isClearable
               />
             ) : (
               <div className="new-client-form">
@@ -248,6 +214,7 @@ export function ManualBookingPage({ currentUser }) {
           </div>
         )}
 
+        {/* --- A CONDIÇÃO AQUI FOI SIMPLIFICADA --- */}
         {selectedService && isClientStepComplete && (
           <>
             <div className="step">

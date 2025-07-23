@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebaseConfig';
-import { doc, getDoc, addDoc, collection, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, addDoc, collection, updateDoc, Timestamp } from 'firebase/firestore';
 import Calendar from 'react-calendar';
 import toast from 'react-hot-toast';
 import { useAvailability } from '../hooks/useAvailability';
@@ -31,18 +31,55 @@ function BookingPage({ currentUser }) {
     setSelectedTime(null);
   }, [date]);
 
+  // ==================================================================
+  // INÍCIO DA ÁREA CORRIGIDA
+  // ==================================================================
+
+  // Função para enviar a notificação para o admin via WhatsApp
+  const sendAdminWhatsAppNotification = async (clientName, serviceName, dateStr, time) => {
+    const messageBody = `Novo Agendamento! 🔔\n\nCliente: ${clientName}\nServiço: ${serviceName}\nData: ${dateStr}\nHorário: ${time}`;
+
+    try {
+      // Usamos a nossa API da Vercel para enviar a mensagem
+      const response = await fetch('/api/send-whatsapp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ body: messageBody }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Notificação enviada para o admin!');
+      } else {
+        throw new Error(data.error || 'Falha ao enviar notificação.');
+      }
+    } catch (error) {
+      console.error('Erro na notificação para admin:', error);
+      // Usamos um toast de aviso, pois o agendamento em si funcionou
+      toast.error(`Agendamento salvo, mas falha ao notificar o admin: ${error.message}`);
+    }
+  };
+
+
   const handleBooking = async () => {
     if (!currentUser) return toast.error("Você precisa estar logado para agendar.");
     if (!service || !date || !selectedTime) return toast.error("Por favor, selecione data e horário.");
 
     try {
+      const bookingDateTime = new Date(date);
+      const [hours, minutes] = selectedTime.split(':');
+      bookingDateTime.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+
       await addDoc(collection(db, "agendamentos"), {
         userId: currentUser.uid,
         userName: currentUser.name,
         serviceId: serviceId,
         serviceName: service.name,
         servicePrice: service.price,
-        date: date.toLocaleDateString('pt-BR'),
+        date: Timestamp.fromDate(bookingDateTime), // Corrigido para Timestamp
         time: selectedTime,
         status: 'Agendado',
       });
@@ -51,17 +88,14 @@ function BookingPage({ currentUser }) {
       const userRef = doc(db, "users", currentUser.uid);
       await updateDoc(userRef, { status: 'agendado' });
 
-      try {
-        const notificationData = { userName: currentUser.name, serviceName: service.name, date: date.toLocaleDateString('pt-BR'), time: selectedTime };
-        // Lembre-se de colocar sua URL correta da Vercel aqui
-        await fetch('https://telegram-bot-salao.vercel.app/api/sendMessage', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(notificationData),
-        });
-      } catch (notificationError) {
-        console.error("Aviso: Agendamento salvo, mas notificação falhou:", notificationError);
-      }
+      // A MÁGICA ACONTECE AQUI!
+      // Removemos a chamada do Telegram e colocamos a do WhatsApp.
+      await sendAdminWhatsAppNotification(
+        currentUser.name,
+        service.name,
+        date.toLocaleDateString('pt-BR'),
+        selectedTime
+      );
 
       toast.success("Agendamento realizado com sucesso!");
       navigate('/meus-agendamentos');
@@ -70,6 +104,10 @@ function BookingPage({ currentUser }) {
       toast.error("Ocorreu um erro ao agendar. Tente novamente.");
     }
   };
+
+  // ==================================================================
+  // FIM DA ÁREA CORRIGIDA
+  // ==================================================================
 
   if (!service) { return <div>Carregando...</div>; }
 
