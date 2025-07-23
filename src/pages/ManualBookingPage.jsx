@@ -94,9 +94,6 @@ export function ManualBookingPage({ currentUser }) {
     }
 
     let clientIdToUse = selectedUserId;
-    // --- AQUI ESTÁ A CORREÇÃO ---
-    // Buscamos o cliente na lista 'allClients' usando 'value' e pegamos o 'label' para o nome.
-
     let clientNameToUse = allClients.find(c => c.value === selectedUserId)?.label;
 
     if (clientMode === 'add') {
@@ -129,7 +126,7 @@ export function ManualBookingPage({ currentUser }) {
         userId: clientIdToUse,
         userName: clientNameToUse,
         adminId: currentUser.uid,
-        serviceId: selectedService.id,git add .
+        serviceId: selectedService.id,
         serviceName: selectedService.name,
         servicePrice: selectedService.price,
         date: date.toLocaleDateString('pt-BR'),
@@ -141,17 +138,15 @@ export function ManualBookingPage({ currentUser }) {
       await updateDoc(userDocRef, { status: 'agendado' });
 
       toast.success("Agendamento manual criado e status do cliente atualizado!");
-      // --- INÍCIO DA ADIÇÃO ---
-      // Encontra o nome do serviço selecionado para usar na mensagem
-      const serviceName = services.find(s => s.id === selectedService)?.name || 'serviço selecionado';
 
-      // Chama a função de notificação após salvar tudo
-      await sendWhatsAppNotification(selectedCustomer, serviceName, selectedDate.toLocaleDateString('pt-BR'), selectedTime);
-      // --- FIM DA ADIÇÃO ---
-
-      // Reset form
-      setSelectedCustomer(null);
-      // ... resto da função de reset
+      // --- INÍCIO DA LÓGICA DE NOTIFICAÇÃO PARA O ADMIN ---
+      await sendAdminWhatsAppNotification(
+        clientNameToUse,
+        selectedService.name,
+        date.toLocaleDateString('pt-BR'),
+        selectedTime
+      );
+      // --- FIM DA LÓGICA DE NOTIFICAÇÃO ---
       // --- INÍCIO DA NOVA LÓGICA DE "RESET" ---
       // Limpa todos os estados para recomeçar o formulário
       setSelectedService(null);
@@ -167,27 +162,9 @@ export function ManualBookingPage({ currentUser }) {
       console.error("Erro no agendamento manual:", error);
     }
   };
-
-  const getSelectedClientName = () => {
-    if (clientMode === 'select' && selectedUserId) {
-      return allClients.find(c => c.value === selectedUserId)?.label || '';
-    }
-    if (clientMode === 'add') {
-      return newClientName;
-    }
-    return '';
-  };
-
-  // --- INÍCIO DA CORREÇÃO ---
-  // Criamos uma variável para verificar se a etapa do cliente está concluída.
   const isClientStepComplete = (clientMode === 'select' && selectedUserId) || (clientMode === 'add' && newClientName.trim() !== '');
-  // --- FIM DA CORREÇÃO ---
-  const sendWhatsAppNotification = async (customer, serviceName, date, time) => {
-    // Formata o número para o padrão E.164 que a Twilio exige (ex: +5542999998888)
-    // Isso remove espaços, traços, parênteses e garante que comece com o código do país.
-    const formatedPhoneNumber = `+${customer.phone.replace(/\D/g, '')}`;
-
-    const messageBody = `Olá, ${customer.name}! Seu agendamento para o serviço de "${serviceName}" no dia ${date} às ${time} foi confirmado com sucesso. Te esperamos! - Salão da Bella`;
+  const sendAdminWhatsAppNotification = async (clientName, serviceName, date, time) => {
+    const messageBody = `Novo Agendamento! 🔔\n\nCliente: ${clientName}\nServiço: ${serviceName}\nData: ${date}\nHorário: ${time}`;
 
     try {
       const response = await fetch('/api/send-whatsapp', {
@@ -195,24 +172,22 @@ export function ManualBookingPage({ currentUser }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          to: formatedPhoneNumber, // Número do cliente formatado
-          body: messageBody,       // A mensagem que escrevemos
-        }),
+        body: JSON.stringify({ body: messageBody }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        toast.success('Notificação de WhatsApp enviada com sucesso!');
+        toast.success('Notificação enviada para o admin!');
       } else {
         throw new Error(data.error || 'Falha ao enviar notificação.');
       }
     } catch (error) {
-      console.error('Erro na notificação via WhatsApp:', error);
-      toast.error(`Agendamento salvo, mas falha ao notificar: ${error.message}`);
+      console.error('Erro na notificação para admin:', error);
+      toast.error(`Agendamento salvo, mas falha ao notificar o admin: ${error.message}`);
     }
   };
+  // --- FIM DA CORREÇÃO ---
 
   return (
     <div className="manual-booking-container">
