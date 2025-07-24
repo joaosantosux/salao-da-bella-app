@@ -138,4 +138,4 @@ function BookingPage({ currentUser }) {
     </div>
   );
 }
-export default BookingPage;
+export default BookingPage; 
